@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">DiceRoller</string>
+    <string name="roll">Roll</string>
+    <string name="lemonade_creation">Lemonade creation</string>
+
+    <string name="lemon_tree">Lemon tree</string>
+    <string name="lemon">Lemon</string>
+    <string name="lemonade">Glass of lemonade</string>
+    <string name="empty_glass">Empty glass</string>
+
+    <string name="lemon_tree_tap">Tap the lemon tree to select a lemon</string>
+    <string name="lemon_tap">Keep tapping the lemon to squeeze it</string>
+    <string name="lemonade_tap">Tap the lemonade to drink it</string>
+    <string name="empty_glass_tap">Tap the empty glass to start again</string>
+    <string name="dice_roller">Dice roller</string>
+</resources>
