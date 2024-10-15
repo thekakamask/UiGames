@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -91,7 +93,9 @@ fun LemonadeApp() {
 
     Column(horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize()) {
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())) {
 
         when (currentStep) {
             //IDEE D'APPELER UNE SEULE FOIS LEMONTEXTANDIMAGE (CALCUL DES VALEURS DANS LE WHEN)
@@ -142,15 +146,15 @@ fun LemonadeApp() {
             }
         }
 
-        Spacer(modifier = Modifier.height(128.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                val intent = Intent(context, RollActivity::class.java)
+                val intent = Intent(context, TipTimeActivity::class.java)
                 context.startActivity(intent)
             },
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
         ) {
-            Text(stringResource(R.string.dice_roller),fontWeight = FontWeight.Bold,color = Color.Black)
+            Text(stringResource(R.string.go_to_tip_time),fontWeight = FontWeight.Bold,color = Color.Black)
         }
     }
 }

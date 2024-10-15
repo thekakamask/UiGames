@@ -1,16 +1,24 @@
 <resources>
     <string name="app_name">DiceRoller</string>
     <string name="roll">Roll</string>
-    <string name="lemonade_creation">Lemonade creation</string>
 
+    <string name="go_to_lemonade_creation">Go to Lemonade Creation</string>
     <string name="lemon_tree">Lemon tree</string>
     <string name="lemon">Lemon</string>
     <string name="lemonade">Glass of lemonade</string>
     <string name="empty_glass">Empty glass</string>
 
+    <string name="go_to_dice_roller">Go to Dice Roller</string>
     <string name="lemon_tree_tap">Tap the lemon tree to select a lemon</string>
     <string name="lemon_tap">Keep tapping the lemon to squeeze it</string>
     <string name="lemonade_tap">Tap the lemonade to drink it</string>
     <string name="empty_glass_tap">Tap the empty glass to start again</string>
     <string name="dice_roller">Dice roller</string>
+
+    <string name="go_to_tip_time">Go to Tip Time</string>
+    <string name="calculate_tip">Calculate Tip</string>
+    <string name="bill_amount">Bill Amount</string>
+    <string name="tip_amount">Tip Amount: %s</string>
+    <string name="how_was_the_service">Tip Percentage</string>
+    <string name="round_up_tip">Round up tip?</string>
 </resources>
