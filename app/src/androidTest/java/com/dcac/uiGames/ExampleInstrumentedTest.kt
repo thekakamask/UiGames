@@ -1,4 +1,4 @@
-package com.dcac.diceroller
+package com.dcac.uiGames
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

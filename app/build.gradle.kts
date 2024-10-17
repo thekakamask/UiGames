@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.dcac.diceroller"
+    namespace = "com.dcac.uiGames"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.dcac.diceroller"
+        applicationId = "com.dcac.uiGames"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

@@ -1,4 +1,4 @@
-package com.dcac.diceroller
+package com.dcac.uiGames
 
 import android.content.Intent
 import android.os.Bundle
@@ -10,10 +10,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -34,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -42,7 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.dcac.diceroller.ui.theme.DiceRollerTheme
+import com.dcac.uiGames.ui.theme.UiGamesTheme
 
 class LemonadeActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +54,7 @@ class LemonadeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            DiceRollerTheme {
+            UiGamesTheme {
                 Scaffold(
                     topBar = {
                         CenterAlignedTopAppBar(
@@ -94,8 +98,10 @@ fun LemonadeApp() {
     Column(horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
+            .verticalScroll(rememberScrollState())
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())) {
+            .safeDrawingPadding()
+            .statusBarsPadding()) {
 
         when (currentStep) {
             //IDEE D'APPELER UNE SEULE FOIS LEMONTEXTANDIMAGE (CALCUL DES VALEURS DANS LE WHEN)
@@ -148,13 +154,30 @@ fun LemonadeApp() {
 
         Spacer(modifier = Modifier.height(16.dp))
         Button(
+            modifier = Modifier.padding(8.dp),
             onClick = {
-                val intent = Intent(context, TipTimeActivity::class.java)
+                val intent = Intent(context, WelcomeActivity::class.java)
                 context.startActivity(intent)
             },
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text(stringResource(R.string.go_to_tip_time),fontWeight = FontWeight.Bold,color = Color.Black)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Icône à gauche
+                Icon(
+                    painter = painterResource(id = R.drawable.button_home),
+                    contentDescription = null, // description de l'icône
+                    modifier = Modifier.size(30.dp) // Taille de l'icône
+                )
+
+                // Espacement entre l'icône et le texte
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Texte du bouton
+                Text(
+                    text = stringResource(R.string.go_to_home),
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -202,7 +225,7 @@ fun LemonTextAndImage(
 @Preview(showBackground = true)
 @Composable
 fun LemonadeAppPreview() {
-    DiceRollerTheme {
+    UiGamesTheme {
         LemonadeApp()
     }
 }

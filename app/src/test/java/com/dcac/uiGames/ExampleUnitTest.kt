@@ -1,4 +1,4 @@
-package com.dcac.diceroller
+package com.dcac.uiGames
 
 import org.junit.Test
 

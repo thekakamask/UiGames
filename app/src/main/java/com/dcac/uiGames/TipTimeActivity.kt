@@ -1,4 +1,4 @@
-package com.dcac.diceroller
+package com.dcac.uiGames
 
 import android.content.Intent
 import android.os.Bundle
@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,14 +37,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -52,7 +51,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.dcac.diceroller.ui.theme.DiceRollerTheme
+import com.dcac.uiGames.ui.theme.UiGamesTheme
+import org.jetbrains.annotations.VisibleForTesting
 import java.text.NumberFormat
 
 class TipTimeActivity : ComponentActivity() {
@@ -61,7 +61,7 @@ class TipTimeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            DiceRollerTheme {
+            UiGamesTheme {
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
                         title = {
@@ -107,10 +107,10 @@ fun TipTimeApp(){
 
     Column(
         modifier = Modifier
+            .verticalScroll(rememberScrollState())
             .statusBarsPadding()
             .padding(horizontal = 40.dp)
-            .safeDrawingPadding()
-            .verticalScroll(rememberScrollState()),
+            .safeDrawingPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -155,13 +155,30 @@ fun TipTimeApp(){
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(
+            modifier = Modifier.padding(8.dp),
             onClick = {
-                val intent = Intent(context, RollActivity::class.java)
+                val intent = Intent(context, WelcomeActivity::class.java)
                 context.startActivity(intent)
             },
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text(stringResource(R.string.go_to_dice_roller),fontWeight = FontWeight.Bold,color = Color.Black)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Icône à gauche
+                Icon(
+                    painter = painterResource(id = R.drawable.button_home),
+                    contentDescription = null, // description de l'icône
+                    modifier = Modifier.size(30.dp) // Taille de l'icône
+                )
+
+                // Espacement entre l'icône et le texte
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Texte du bouton
+                Text(
+                    text = stringResource(R.string.go_to_home),
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -206,7 +223,8 @@ fun RoundTheTipRow(roundUp: Boolean,
     }
 }
 
-private fun calculateTip(amount: Double, tipPercent: Double = 15.0, roundUp: Boolean): String {
+@VisibleForTesting
+internal fun calculateTip(amount: Double, tipPercent: Double = 15.0, roundUp: Boolean): String {
     var tip = tipPercent / 100 * amount
     if (roundUp) {
         tip = kotlin.math.ceil(tip)
@@ -217,5 +235,7 @@ private fun calculateTip(amount: Double, tipPercent: Double = 15.0, roundUp: Boo
 @Preview(showBackground = true)
 @Composable
 fun TipTimeAppPreview() {
-    TipTimeApp()
+    UiGamesTheme {
+        TipTimeApp()
+    }
 }

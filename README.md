@@ -1,23 +1,45 @@
-# UiGame
-UiGame is a simple Android application developed with Jetpack Compose, which allows you to simulate a dice roll, an interactive lemonade-making game, and a tip calculator for service amounts.
+# UiGames
+UiGames is a simple Android application developed with Jetpack Compose, offering multiple interactive activities: a dice roller, a lemonade-making game, a tip calculator, and an art gallery viewer.
 
 ## Features
 
-- RollActivity : Roll a virtual die with a button to generate a random number (1 to 6), accompanied by the graphic display of the die :
-A clean and responsive interface thanks to Jetpack Compose.
-Ability to navigate to the Lemonade activity.
-- LemonadeActivity : Interactive game that guides the user through several steps: pick a lemon, squeeze the lemon, drink the lemonade, and start again. The stages are based on clickable events and dynamic progression with images and texts adapted to each stage :
-Ability to navigate back to the Dice Roller activity.
-- TipTimeActivity: A simple tool to calculate tips based on a given bill amount and tip percentage : 
-Option to round up the tip.
-Clean interface with text fields for input and a button to navigate back to the Dice Roller activity.
+### WelcomeActivity
+- A home screen with buttons (with icons) that allows users to navigate to the various activities:
+  - Dice Roller
+  - Lemonade Creation
+  - Tip Calculator
+  - Art Gallery
+- Each button is equipped with relevant icons and clean material design.
 
-## Technology
+### RollActivity
+- Roll a virtual die with a button to generate a random number (1 to 6).
+- Displays the graphic representation of the die face.
+- Navigate back to the WelcomeActivity.
 
-- Jetpack Compose : for creating modern, declarative user interfaces.
-- Material Design 3 : For modern app styles and components.
-- Navigation between activities: integration of buttons to navigate between Dice Roller and Lemonade activities.
+### LemonadeActivity
+- An interactive game where the user goes through several stages: picking a lemon, squeezing the lemon, drinking the lemonade, and starting over.
+- Stages are based on user interactions, dynamic image changes, and text feedback.
+- Navigate back to the WelcomeActivity.
 
-## Objectives
+### TipTimeActivity
+- A tool to calculate tips based on the bill amount and the percentage entered.
+- Provides the option to round up the tip.
+- Clean interface with input fields and a navigation button back to WelcomeActivity.
 
-The app demonstrates how to use Jetpack Compose to create responsive and intuitive user interfaces with a modern design while incorporating simple features like random number generation, step-by-step interaction, and tip calculation.
+### ArtGalleryActivity
+- View a series of paintings in a swipeable gallery.
+- Swipe left or right to navigate through the gallery, with each swipe showing one painting.
+- The paintings have titles, artist names, and descriptions, and a tooltip can be toggled to show additional information about the painting.
+- Buttons allow navigation back to the WelcomeActivity and to the next or previous painting.
+
+## Technology Stack
+
+- **Jetpack Compose**: For building responsive and modern user interfaces declaratively.
+- **Material Design 3**: For styling and consistency across UI elements.
+- **Multi-screen orientation support**: Custom layouts for both portrait and landscape modes.
+- **Navigation between activities**: Seamless transitions between various activities with buttons.
+- **Vector icons**: Custom vector icons used for buttons, ensuring scalability across different screen sizes.
+
+## Objective
+
+This app demonstrates how to effectively use Jetpack Compose to build modern, user-friendly interfaces while incorporating interactive activities, such as rolling dice, making lemonade, calculating tips, and viewing artwork.

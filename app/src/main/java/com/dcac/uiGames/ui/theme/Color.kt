@@ -1,4 +1,4 @@
-package com.dcac.diceroller.ui.theme
+package com.dcac.uiGames.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
