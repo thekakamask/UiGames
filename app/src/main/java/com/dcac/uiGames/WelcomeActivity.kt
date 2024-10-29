@@ -1,5 +1,6 @@
 package com.dcac.uiGames
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,11 +12,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -29,6 +30,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,12 +45,14 @@ import androidx.compose.ui.unit.dp
 import com.dcac.uiGames.ui.theme.UiGamesTheme
 
 class WelcomeActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             UiGamesTheme {
+                val windowSizeClass = calculateWindowSizeClass(this)
+                val context = LocalContext.current
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
                         title = {
@@ -68,7 +74,7 @@ class WelcomeActivity : ComponentActivity() {
                             .background(MaterialTheme.colorScheme.tertiaryContainer),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        WelcomeApp()
+                        WelcomeApp(windowSizeClass.widthSizeClass, context)
                     }
                 }
             }
@@ -77,145 +83,177 @@ class WelcomeActivity : ComponentActivity() {
 }
 
 @Composable
-fun WelcomeApp(){
-    val context = LocalContext.current
-    Column(modifier = Modifier
-        .verticalScroll(rememberScrollState())
-        .fillMaxSize()
-        .statusBarsPadding()
-        .safeDrawingPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceEvenly) {
+fun WelcomeApp(widthSizeClass: WindowWidthSizeClass, context: Context) {
+    when (widthSizeClass) {
+        WindowWidthSizeClass.Compact -> {
+            CompactLayout(context)
+        }
+        WindowWidthSizeClass.Medium -> {
+            MediumLayout(context)
+        }
+        WindowWidthSizeClass.Expanded -> {
+            ExpandedLayout(context)
+        }
+    }
+}
 
-        Column(modifier=Modifier,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center) {
+@Composable
+fun CompactLayout(context: Context) {   // Width < 600dp (Phone in portrait)
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Image(
+            painter = painterResource(R.drawable.welcome_ui_games),
+            contentDescription = "welcome_ui_games",
+            modifier = Modifier.padding(16.dp)
+        )
+        ButtonsColumn(context)
+    }
+}
+
+@Composable
+fun MediumLayout(context: Context) { // 600 < Width < 840dp (Tablet in portrait, and Foldable in portrait(unfolded))
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Image(
+            painter = painterResource(R.drawable.welcome_ui_games),
+            contentDescription = "welcome_ui_games",
+            modifier = Modifier.padding(16.dp)
+        )
+        ButtonsColumn(context)
+    }
+}
+
+@Composable
+fun ExpandedLayout(context: Context) { // Phone in landscape, Tablet in landscape, Foldable in landscape (unfolded), Desktop
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Image(
                 painter = painterResource(R.drawable.welcome_ui_games),
                 contentDescription = "welcome_ui_games",
-                modifier = Modifier
-                    .padding(16.dp)
+                modifier = Modifier.size(200.dp)
             )
-            /*Text(stringResource(R.string.welcome_to_ui_games),
-                fontSize = 25.sp)
-            Text(stringResource(R.string.choose_activity),
-                fontSize = 20.sp)*/
+            ButtonsColumn(context)
         }
+    }
+}
 
-        Column(modifier=Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center) {
-
-
-            Button(
-                modifier = Modifier.padding(8.dp),
-                onClick = {
-                    val intent = Intent(context, RollActivity::class.java)
-                    context.startActivity(intent)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Icône à gauche
-                    Icon(
-                        painter = painterResource(id = R.drawable.button_dice),
-                        contentDescription = null, // description de l'icône
-                        modifier = Modifier.size(30.dp) // Taille de l'icône
-                    )
-
-                    // Espacement entre l'icône et le texte
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Texte du bouton
-                    Text(
-                        text = stringResource(R.string.go_to_dice_roller),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-
-            Button(
-                modifier = Modifier.padding(8.dp),
-                onClick = {
-                    val intent = Intent(context, LemonadeActivity::class.java)
-                    context.startActivity(intent)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Icône à gauche
-                    Icon(
-                        painter = painterResource(id = R.drawable.button_limonade),
-                        contentDescription = null, // description de l'icône
-                        modifier = Modifier.size(30.dp)// Taille de l'icône
-                    )
-
-                    // Espacement entre l'icône et le texte
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Texte du bouton
-                    Text(
-                        text = stringResource(R.string.go_to_lemonade_creation),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            Button(
-                modifier = Modifier.padding(8.dp),
-                onClick = {
-                    val intent = Intent(context, TipTimeActivity::class.java)
-                    context.startActivity(intent)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Icône à gauche
-                    Icon(
-                        painter = painterResource(id = R.drawable.button_tip),
-                        contentDescription = null, // description de l'icône
-                        modifier = Modifier.size(30.dp) // Taille de l'icône
-                    )
-
-                    // Espacement entre l'icône et le texte
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Texte du bouton
-                    Text(
-                        text = stringResource(R.string.go_to_tip_time),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            Button(
-                modifier = Modifier.padding(8.dp),
-                onClick = {
-                    val intent = Intent(context, ArtGalleryActivity::class.java)
-                    context.startActivity(intent)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Icône à gauche
-                    Icon(
-                        painter = painterResource(id = R.drawable.button_art),
-                        contentDescription = null, // description de l'icône
-                        modifier = Modifier.size(30.dp) // Taille de l'icône
-                    )
-
-                    // Espacement entre l'icône et le texte
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Texte du bouton
-                    Text(
-                        text = stringResource(R.string.go_to_art_gallery),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+@Composable
+fun ButtonsColumn(context: Context) {
+    Column(
+        modifier = Modifier.padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Button(
+            modifier = Modifier.padding(8.dp),
+            onClick = {
+                val intent = Intent(context, RollActivity::class.java)
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.button_dice),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.go_to_dice_roller),
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
 
+        Button(
+            modifier = Modifier.padding(8.dp),
+            onClick = {
+                val intent = Intent(context, LemonadeActivity::class.java)
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.button_limonade),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.go_to_lemonade_creation),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
 
+        Button(
+            modifier = Modifier.padding(8.dp),
+            onClick = {
+                val intent = Intent(context, TipTimeActivity::class.java)
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.button_tip),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.go_to_tip_time),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Button(
+            modifier = Modifier.padding(8.dp),
+            onClick = {
+                val intent = Intent(context, ArtGalleryActivity::class.java)
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.button_art),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.go_to_art_gallery),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }
 
@@ -223,6 +261,6 @@ fun WelcomeApp(){
 @Composable
 fun WelcomeAppPreview() {
     UiGamesTheme {
-        WelcomeApp()
+        ExpandedLayout(context= LocalContext.current) // Change layout here for preview
     }
 }

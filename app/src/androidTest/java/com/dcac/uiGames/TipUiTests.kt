@@ -2,7 +2,9 @@ package com.dcac.uiGames
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTextInput
@@ -21,7 +23,16 @@ class TipUiTests {
         composeTestRule.setContent {
             UiGamesTheme {
                 Surface (modifier = Modifier.fillMaxSize()){
-                    TipTimeApp()
+                    TipTimeApp(
+                        widthSizeClass = WindowWidthSizeClass.Expanded,
+                        amountInput = "50",
+                        tipInput = "15",
+                        roundUp = false,
+                        context = LocalContext.current,
+                        onAmountChange = {},
+                        onTipChange = {},
+                        onRoundUpChange = {}
+                    )
                 }
             }
         }

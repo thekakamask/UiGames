@@ -1,5 +1,6 @@
 package com.dcac.uiGames
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -16,9 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
@@ -36,10 +35,13 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,12 +58,17 @@ import org.jetbrains.annotations.VisibleForTesting
 import java.text.NumberFormat
 
 class TipTimeActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             UiGamesTheme {
+                val windowSizeClass = calculateWindowSizeClass(this)
+                var amountInput by rememberSaveable { mutableStateOf("") }
+                var tipInput by rememberSaveable { mutableStateOf("") }
+                var roundUp by rememberSaveable { mutableStateOf(false) }
+                val context = LocalContext.current
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
                         title = {
@@ -83,7 +90,16 @@ class TipTimeActivity : ComponentActivity() {
                             .background(MaterialTheme.colorScheme.tertiaryContainer),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        TipTimeApp()
+                        TipTimeApp(
+                            windowSizeClass.widthSizeClass,
+                            amountInput = amountInput,
+                            tipInput = tipInput,
+                            roundUp = roundUp,
+                            context = context,
+                            onAmountChange = { amountInput = it },
+                            onTipChange = { tipInput = it },
+                            onRoundUpChange = { roundUp = it }
+                        )
                     }
                 }
             }
@@ -92,33 +108,131 @@ class TipTimeActivity : ComponentActivity() {
 }
 
 @Composable
-fun TipTimeApp(){
+fun TipTimeApp(
+    widthSizeClass: WindowWidthSizeClass,
+    amountInput: String,
+    tipInput: String,
+    roundUp: Boolean,
+    context: Context,
+    onAmountChange: (String) -> Unit,
+    onTipChange: (String) -> Unit,
+    onRoundUpChange: (Boolean) -> Unit
+) {
+    when (widthSizeClass) {
+        WindowWidthSizeClass.Compact -> CompactTipLayout(amountInput, tipInput, roundUp, context, onAmountChange, onTipChange, onRoundUpChange)
+        WindowWidthSizeClass.Medium -> MediumTipLayout(amountInput, tipInput, roundUp, context, onAmountChange, onTipChange, onRoundUpChange)
+        WindowWidthSizeClass.Expanded -> ExpandedTipLayout(amountInput, tipInput, roundUp, context, onAmountChange, onTipChange, onRoundUpChange)
+    }
+}
 
-    var amountInput by remember { mutableStateOf("") }
-    var tipInput by remember { mutableStateOf("") }
-    val amount = amountInput.toDoubleOrNull() ?: 0.0
-    val tipPercent = tipInput.toDoubleOrNull() ?: 0.0
+@Composable
+fun CompactTipLayout(
+    amountInput: String,
+    tipInput: String,
+    roundUp: Boolean,
+    context: Context,
+    onAmountChange: (String) -> Unit,
+    onTipChange: (String) -> Unit,
+    onRoundUpChange: (Boolean) -> Unit
+) {
+    TipTimeContentLayout(amountInput, tipInput, roundUp, context, onAmountChange, onTipChange, onRoundUpChange)
+}
 
-    var roundUp by remember { mutableStateOf(false) }
+@Composable
+fun MediumTipLayout(
+    amountInput: String,
+    tipInput: String,
+    roundUp: Boolean,
+    context: Context,
+    onAmountChange: (String) -> Unit,
+    onTipChange: (String) -> Unit,
+    onRoundUpChange: (Boolean) -> Unit
+) {
+    TipTimeContentLayout(amountInput, tipInput, roundUp, context, onAmountChange, onTipChange, onRoundUpChange)
+}
 
-    val tip = calculateTip(amount, tipPercent, roundUp)
+@Composable
+fun ExpandedTipLayout(
+    amountInput: String,
+    tipInput: String,
+    roundUp: Boolean,
+    context: Context,
+    onAmountChange: (String) -> Unit,
+    onTipChange: (String) -> Unit,
+    onRoundUpChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
 
-    val context = LocalContext.current
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 16.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Center
+        ) {
+            TipTimeContentLeft(amountInput, tipInput, roundUp, onAmountChange, onTipChange, onRoundUpChange)
+        }
 
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            TipTimeContentRight(context, calculateTip(amountInput.toDoubleOrNull() ?: 0.0, tipInput.toDoubleOrNull() ?: 0.0, roundUp))
+        }
+    }
+}
+
+@Composable
+fun TipTimeContentLayout(
+    amountInput: String,
+    tipInput: String,
+    roundUp: Boolean,
+    context: Context,
+    onAmountChange: (String) -> Unit,
+    onTipChange: (String) -> Unit,
+    onRoundUpChange: (Boolean) -> Unit
+) {
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
-            .statusBarsPadding()
-            .padding(horizontal = 40.dp)
-            .safeDrawingPadding(),
+            .padding(horizontal = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        TipTimeContentLeft(amountInput, tipInput, roundUp, onAmountChange, onTipChange, onRoundUpChange)
+        TipTimeContentRight(context, calculateTip(amountInput.toDoubleOrNull() ?: 0.0, tipInput.toDoubleOrNull() ?: 0.0, roundUp))
+    }
+}
+
+@Composable
+fun TipTimeContentLeft(
+    amountInput: String,
+    tipInput: String,
+    roundUp: Boolean,
+    onAmountChange: (String) -> Unit,
+    onTipChange: (String) -> Unit,
+    onRoundUpChange: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
             text = stringResource(R.string.calculate_tip),
-            modifier = Modifier
-                .padding(bottom = 16.dp, top = 40.dp)
-                .align(alignment = Alignment.Start)
+            modifier = Modifier.padding(bottom = 16.dp, top = 40.dp)
         )
         EditNumberField(
             label = R.string.bill_amount,
@@ -128,10 +242,11 @@ fun TipTimeApp(){
                 imeAction = ImeAction.Next
             ),
             value = amountInput,
-            onValueChange = { amountInput = it },
+            onValueChange = onAmountChange,
             modifier = Modifier
-            .padding(bottom = 32.dp)
-            .fillMaxWidth())
+                .padding(bottom = 32.dp)
+                .fillMaxWidth()
+        )
         EditNumberField(
             label = R.string.how_was_the_service,
             leadingIcon = R.drawable.pourcentage_30,
@@ -140,45 +255,49 @@ fun TipTimeApp(){
                 imeAction = ImeAction.Done
             ),
             value = tipInput,
-            onValueChange = { tipInput = it },
+            onValueChange = onTipChange,
             modifier = Modifier
                 .padding(bottom = 32.dp)
-                .fillMaxWidth())
+                .fillMaxWidth()
+        )
         RoundTheTipRow(
             roundUp = roundUp,
-            onRoundUpChanged = { roundUp = it },
+            onRoundUpChanged = onRoundUpChange,
             modifier = Modifier.padding(bottom = 32.dp)
         )
-        Text(
-            text = stringResource(R.string.tip_amount, tip),
-            style = MaterialTheme.typography.displaySmall
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            modifier = Modifier.padding(8.dp),
-            onClick = {
-                val intent = Intent(context, WelcomeActivity::class.java)
-                context.startActivity(intent)
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Icône à gauche
-                Icon(
-                    painter = painterResource(id = R.drawable.button_home),
-                    contentDescription = null, // description de l'icône
-                    modifier = Modifier.size(30.dp) // Taille de l'icône
-                )
+    }
+}
 
-                // Espacement entre l'icône et le texte
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Texte du bouton
-                Text(
-                    text = stringResource(R.string.go_to_home),
-                    fontWeight = FontWeight.Bold
-                )
-            }
+@Composable
+fun TipTimeContentRight(
+    context: Context,
+    tip: String
+) {
+    Text(
+        text = stringResource(R.string.tip_amount, tip),
+        style = MaterialTheme.typography.displaySmall,
+        modifier = Modifier.padding(end = 16.dp)
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    Button(
+        modifier = Modifier.padding(8.dp),
+        onClick = {
+            val intent = Intent(context, WelcomeActivity::class.java)
+            context.startActivity(intent)
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(id = R.drawable.button_home),
+                contentDescription = null,
+                modifier = Modifier.size(30.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.go_to_home),
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -190,12 +309,13 @@ fun EditNumberField(
     keyboardOptions: KeyboardOptions,
     value: String,
     onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier) {
+    modifier: Modifier = Modifier
+) {
     TextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(text = stringResource(id = label)) },
-        leadingIcon = { Icon(painter = painterResource(id = leadingIcon), null) },
+        leadingIcon = { Icon(painter = painterResource(id = leadingIcon), contentDescription = null) },
         singleLine = true,
         keyboardOptions = keyboardOptions,
         modifier = modifier
@@ -203,9 +323,11 @@ fun EditNumberField(
 }
 
 @Composable
-fun RoundTheTipRow(roundUp: Boolean,
-                   onRoundUpChanged: (Boolean) -> Unit,
-                   modifier: Modifier = Modifier) {
+fun RoundTheTipRow(
+    roundUp: Boolean,
+    onRoundUpChanged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -215,10 +337,10 @@ fun RoundTheTipRow(roundUp: Boolean,
         Text(text = stringResource(R.string.round_up_tip))
         Switch(
             modifier = modifier
-            .fillMaxWidth()
-            .wrapContentWidth(Alignment.End),
+                .fillMaxWidth()
+                .wrapContentWidth(Alignment.End),
             checked = roundUp,
-            onCheckedChange = onRoundUpChanged,
+            onCheckedChange = onRoundUpChanged
         )
     }
 }
@@ -236,6 +358,15 @@ internal fun calculateTip(amount: Double, tipPercent: Double = 15.0, roundUp: Bo
 @Composable
 fun TipTimeAppPreview() {
     UiGamesTheme {
-        TipTimeApp()
+        TipTimeApp(
+            widthSizeClass = WindowWidthSizeClass.Compact,
+            amountInput = "50",
+            tipInput = "15",
+            roundUp = false,
+            context = LocalContext.current,
+            onAmountChange = {},
+            onTipChange = {},
+            onRoundUpChange = {}
+        )
     }
 }

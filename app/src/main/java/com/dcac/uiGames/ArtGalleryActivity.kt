@@ -1,5 +1,6 @@
 package com.dcac.uiGames
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -18,9 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,12 +34,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -56,12 +57,18 @@ import com.dcac.uiGames.model.Paint
 import com.dcac.uiGames.ui.theme.UiGamesTheme
 
 class ArtGalleryActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             UiGamesTheme {
+                val isSlideInProgress = rememberSaveable { mutableStateOf(false) }
+                val currentPaintingIndex = rememberSaveable { mutableStateOf(0) }
+                val showTooltip = rememberSaveable { mutableStateOf(false) }
+                val context = LocalContext.current
+                val windowSizeClass = calculateWindowSizeClass(this)
+
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
                         title = {
@@ -74,8 +81,7 @@ class ArtGalleryActivity : ComponentActivity() {
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         )
                     )
-                }
-                ) { innerPadding ->
+                }) { innerPadding ->
                     Surface(
                         modifier = Modifier
                             .fillMaxSize()
@@ -83,7 +89,20 @@ class ArtGalleryActivity : ComponentActivity() {
                             .background(MaterialTheme.colorScheme.tertiaryContainer),
                         color = MaterialTheme.colorScheme.background,
                     ) {
-                        ArtGalleryApp()
+                        ArtGalleryApp(
+                            widthSizeClass = windowSizeClass.widthSizeClass,
+                            currentPaintingIndex = currentPaintingIndex,
+                            onPaintingIndexChange = { newIndex ->
+                                if (newIndex != currentPaintingIndex.value) {
+                                    println("Changing index : ${currentPaintingIndex.value} to $newIndex")
+                                    currentPaintingIndex.value = newIndex
+                                }
+                            },
+                            showTooltip = showTooltip.value,
+                            onToggleTooltip = { showTooltip.value = !showTooltip.value },
+                            isSlideInProgress = isSlideInProgress,
+                            context = context
+                        )
                     }
                 }
             }
@@ -92,58 +111,198 @@ class ArtGalleryActivity : ComponentActivity() {
 }
 
 @Composable
-fun ArtGalleryApp() {
-
-    // Récupérer la liste des peintures
+fun ArtGalleryApp(
+    widthSizeClass: WindowWidthSizeClass,
+    currentPaintingIndex: MutableState<Int>,
+    showTooltip: Boolean,
+    isSlideInProgress: MutableState<Boolean>,
+    context: Context,
+    onPaintingIndexChange: (Int) -> Unit,
+    onToggleTooltip: () -> Unit
+) {
     val paintings = Paint.getPaintings()
+    // Log for follow paint index
+    println("ArtGalleryApp Actual index for the paint : $currentPaintingIndex")
+    val currentPainting = paintings[currentPaintingIndex.value]
+    // Log for display actual paint data
+    println("ArtGalleryApp Actual paint : ${currentPainting.title}, Artist : ${currentPainting.artist}, Years : ${currentPainting.year}")
 
-    // Créer un état pour suivre l'indice de la peinture actuelle
-    var currentPaintingIndex by remember { mutableIntStateOf(0) }
 
-    // Gérer l'état de l'infobulle
-    var showTooltip by remember { mutableStateOf(false) }
-    val currentPainting = paintings[currentPaintingIndex]
+    when (widthSizeClass) {
+        WindowWidthSizeClass.Expanded -> {
+            ExpandedArtGalleryLayout(
+                currentPainting = currentPainting,
+                currentPaintingIndex = currentPaintingIndex,
+                paintings = paintings,
+                isSlideInProgress = isSlideInProgress,
+                onPaintingIndexChange = onPaintingIndexChange,
+                showTooltip = showTooltip,
+                onToggleTooltip = onToggleTooltip,
+                context = context
+            )
+        }
+        else -> {
+            CompactArtGalleryLayout(
+                currentPainting = currentPainting,
+                currentPaintingIndex = currentPaintingIndex,
+                paintings = paintings,
+                isSlideInProgress = isSlideInProgress,
+                onPaintingIndexChange = onPaintingIndexChange,
+                showTooltip = showTooltip,
+                onToggleTooltip = onToggleTooltip,
+                context = context
+            )
+        }
+    }
+}
 
-    // Créer un état pour bloquer les glissements répétés
-    var isSlideInProgress by remember { mutableStateOf(false) }
-
-    val context = LocalContext.current
-
-    // Colonne principale avec les peintures et les contrôles
-    Column(
+@Composable
+fun ExpandedArtGalleryLayout(
+    currentPainting: Paint,
+    currentPaintingIndex: MutableState<Int>,
+    paintings: List<Paint>,
+    isSlideInProgress: MutableState<Boolean>,
+    onPaintingIndexChange: (Int) -> Unit,
+    showTooltip: Boolean,
+    onToggleTooltip: () -> Unit,
+    context: Context
+) {
+    Row(
         modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-            .safeDrawingPadding()
-            .statusBarsPadding()
             .fillMaxSize()
-            // Ajout du détecteur de gestes pour le glissement horizontal
-            // Ajout du détecteur de gestes pour le glissement horizontal
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
+                    onDragStart = {
+                        if (!isSlideInProgress.value) {
+                            isSlideInProgress.value = true
+                        }
+                    },
                     onDragEnd = {
-                        // Définir isSlideInProgress sur false une fois le glissement terminé
-                        isSlideInProgress = false
+                        isSlideInProgress.value = false
+                        println("Slide finish, actual index: ${currentPaintingIndex.value}")
                     },
                     onHorizontalDrag = { _, dragAmount ->
-                        // Empêcher les slides multiples avant qu'une action soit terminée
-                        if (!isSlideInProgress) {
-                            isSlideInProgress = true // Bloquer d'autres slides jusqu'à la fin du traitement
-
+                        if (isSlideInProgress.value) {
                             when {
-                                dragAmount > 0 -> {
-                                    // Glissement vers la droite (peinture précédente)
-                                    if (currentPaintingIndex > 0) {
-                                        currentPaintingIndex--
-                                    }
+                                dragAmount > 0 && currentPaintingIndex.value > 0 -> {
+                                    println("Right slide, new index : ${currentPaintingIndex.value - 1}")
+                                    onPaintingIndexChange(currentPaintingIndex.value - 1)
                                 }
-                                dragAmount < 0 -> {
-                                    // Glissement vers la gauche (peinture suivante)
-                                    if (currentPaintingIndex < paintings.size - 1) {
-                                        currentPaintingIndex++
-                                    }
+                                dragAmount < 0 && currentPaintingIndex.value < paintings.size - 1 -> {
+                                    println("Left slide, new index : ${currentPaintingIndex.value + 1}")
+                                    onPaintingIndexChange(currentPaintingIndex.value + 1)
                                 }
                             }
+                            // Lock for avoid multiples changes during the same movement
+                            isSlideInProgress.value = false
+                        }
+                    }
+                )
+            },
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .shadow(8.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = { onToggleTooltip() })
+                    }
+            ) {
+                Image(
+                    painter = painterResource(currentPainting.image),
+                    contentDescription = "painting_display",
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.onTertiary)
+                        .padding(16.dp)
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ArtDescription(currentPainting)
+            Spacer(modifier = Modifier.height(16.dp))
+            ArtControl(
+                onNextClick = {
+                    if (currentPaintingIndex.value < paintings.size - 1) {
+                        onPaintingIndexChange(currentPaintingIndex.value + 1)
+                    }
+                },
+                onPreviousClick = {
+                    if (currentPaintingIndex.value > 0) {
+                        onPaintingIndexChange(currentPaintingIndex.value - 1)
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(30.dp))
+            GoHomeButton(context = context)
+        }
+    }
+
+    if (showTooltip) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Tooltip(text = currentPainting.description)
+        }
+    }
+}
+
+@Composable
+fun CompactArtGalleryLayout(
+    currentPainting: Paint,
+    currentPaintingIndex: MutableState<Int>,
+    paintings: List<Paint>,
+    isSlideInProgress: MutableState<Boolean>,
+    onPaintingIndexChange: (Int) -> Unit,
+    showTooltip: Boolean,
+    onToggleTooltip: () -> Unit,
+    context: Context
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragStart = {
+                        if (!isSlideInProgress.value) {
+                            isSlideInProgress.value = true
+                        }
+                    },
+                    onDragEnd = {
+                        isSlideInProgress.value = false
+                        println("Slide finish, actual index : ${currentPaintingIndex.value}")
+                    },
+                    onHorizontalDrag = { _, dragAmount ->
+                        if (isSlideInProgress.value) {
+                            when {
+                                dragAmount > 0 && currentPaintingIndex.value > 0 -> {
+                                    println("Right slide, new index : ${currentPaintingIndex.value - 1}")
+                                    onPaintingIndexChange(currentPaintingIndex.value - 1)
+                                }
+                                dragAmount < 0 && currentPaintingIndex.value < paintings.size - 1 -> {
+                                    println("Left slide, new index : ${currentPaintingIndex.value + 1}")
+                                    onPaintingIndexChange(currentPaintingIndex.value + 1)
+                                }
+                            }
+                            // Lock for avoid multiples changes during the same movement
+                            isSlideInProgress.value = false
                         }
                     }
                 )
@@ -153,74 +312,42 @@ fun ArtGalleryApp() {
     ) {
         ArtImage(
             currentPainting.image,
-            onImageClick = {
-                // Alterner l'affichage de l'infobulle
-                showTooltip = !showTooltip
-            }
+            onImageClick = onToggleTooltip
         )
         ArtDescription(currentPainting)
         ArtControl(
             onNextClick = {
-                if (currentPaintingIndex < paintings.size - 1) {
-                    currentPaintingIndex++
+                if (currentPaintingIndex.value < paintings.size - 1) {
+                    onPaintingIndexChange(currentPaintingIndex.value + 1)
                 }
             },
             onPreviousClick = {
-                if (currentPaintingIndex > 0) {
-                    currentPaintingIndex--
+                if (currentPaintingIndex.value > 0) {
+                    onPaintingIndexChange(currentPaintingIndex.value - 1)
                 }
             }
         )
         Spacer(modifier = Modifier.height(30.dp))
-        Button(
-            modifier = Modifier.padding(8.dp),
-            onClick = {
-                val intent = Intent(context, WelcomeActivity::class.java)
-                context.startActivity(intent)
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Icône à gauche
-                Icon(
-                    painter = painterResource(id = R.drawable.button_home),
-                    contentDescription = null, // description de l'icône
-                    modifier = Modifier.size(30.dp) // Taille de l'icône
-                )
-
-                // Espacement entre l'icône et le texte
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Texte du bouton
-                Text(
-                    text = stringResource(R.string.go_to_home),
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
+        GoHomeButton(context = context)
     }
 
-    // Affichage de l'infobulle en overlay sans affecter la mise en page principale
     if (showTooltip) {
         Box(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center // Aligne l'infobulle au centre de l'écran
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
             Tooltip(text = currentPainting.description)
         }
     }
 }
+
 @Composable
-fun ArtImage(image: Int, onImageClick: () -> Unit) {
+fun ArtImage(image: Int, onImageClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .shadow(8.dp)
             .pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    // Appel de la fonction de clic sur l'image
-                    onImageClick()
-                })
+                detectTapGestures(onTap = { onImageClick() })
             }
     ) {
         Image(
@@ -234,32 +361,36 @@ fun ArtImage(image: Int, onImageClick: () -> Unit) {
 }
 
 @Composable
-fun Tooltip(text: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize() // Remplir tout l'écran
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
+fun GoHomeButton(context: Context) {
+    Button(
+        modifier = Modifier.padding(8.dp),
+        onClick = {
+            val intent = Intent(context, WelcomeActivity::class.java)
+            context.startActivity(intent)
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
     ) {
-        Box(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
-                .padding(8.dp)
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(id = R.drawable.button_home),
+                contentDescription = null,
+                modifier = Modifier.size(30.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = text,
-                fontSize = 14.sp
+                text = stringResource(R.string.go_to_home),
+                fontWeight = FontWeight.Bold
             )
         }
     }
 }
 
 @Composable
-fun ArtDescription(paint : Paint) {
+fun ArtDescription(paint: Paint) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp,top= 50.dp, bottom = 20.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 50.dp, bottom = 20.dp)
             .shadow(8.dp)
             .background(MaterialTheme.colorScheme.tertiaryContainer),
         verticalArrangement = Arrangement.Center
@@ -269,7 +400,7 @@ fun ArtDescription(paint : Paint) {
             fontSize = 25.sp,
             modifier = Modifier.padding(top = 10.dp, start = 10.dp)
         )
-        Row(modifier=Modifier) {
+        Row(modifier = Modifier) {
             Text(
                 text = paint.artist,
                 fontWeight = FontWeight.Bold,
@@ -291,22 +422,18 @@ fun ArtControl(onNextClick: () -> Unit, onPreviousClick: () -> Unit) {
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        Button(onClick = onPreviousClick,
+        Button(
+            onClick = onPreviousClick,
             enabled = true,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Icône à gauche
                 Icon(
                     painter = painterResource(id = R.drawable.button_art),
-                    contentDescription = null, // description de l'icône
-                    modifier = Modifier.size(30.dp) // Taille de l'icône
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
                 )
-
-                // Espacement entre l'icône et le texte
                 Spacer(modifier = Modifier.width(8.dp))
-
-                // Texte du bouton
                 Text(
                     text = stringResource(R.string.previous_artwork),
                     fontWeight = FontWeight.Bold
@@ -319,17 +446,12 @@ fun ArtControl(onNextClick: () -> Unit, onPreviousClick: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Icône à gauche
                 Icon(
                     painter = painterResource(id = R.drawable.button_art),
-                    contentDescription = null, // description de l'icône
-                    modifier = Modifier.size(30.dp) // Taille de l'icône
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
                 )
-
-                // Espacement entre l'icône et le texte
                 Spacer(modifier = Modifier.width(8.dp))
-
-                // Texte du bouton
                 Text(
                     text = stringResource(R.string.next_artwork),
                     fontWeight = FontWeight.Bold
@@ -339,10 +461,39 @@ fun ArtControl(onNextClick: () -> Unit, onPreviousClick: () -> Unit) {
     }
 }
 
+@Composable
+fun Tooltip(text: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(8.dp))
+                .padding(8.dp)
+        ) {
+            Text(
+                text = text,
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ArtGalleryAppPreview() {
     UiGamesTheme {
-        ArtGalleryApp()
+        ArtGalleryApp(
+            widthSizeClass = WindowWidthSizeClass.Compact,
+            currentPaintingIndex = remember { mutableStateOf(0) },
+            showTooltip = false,
+            isSlideInProgress = remember { mutableStateOf(false) },  // Add sliding argument
+            context = LocalContext.current,
+            onPaintingIndexChange = {},
+            onToggleTooltip = {}
+        )
     }
 }
